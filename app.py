@@ -659,9 +659,13 @@ def main():
                 content = f.read()
             
             if PYPERCLIP_AVAILABLE:
-                pyperclip.copy(content)
-                if args.debug:
-                    logger.info("Content copied to clipboard")
+                try:
+                    pyperclip.copy(content)
+                    if args.debug:
+                        logger.info("Content copied to clipboard")
+                except Exception as e:
+                    # In headless/cloud environments clipboard may be unavailable
+                    logger.info(f"Clipboard not available, skip copy. Reason: {e}")
             else:
                 if args.debug:
                     logger.info("Clipboard functionality not available in this environment")

@@ -149,6 +149,18 @@ input_text = st.text_area('Enter text to process')
 # Process button
 if st.button('Process'):
     if input_text:
+        # Validate API keys before running
+        missing_keys = []
+        # For OpenRouter flows, at least one of OPENROUTER_API_KEY or OPENAI_API_KEY/BASE might be needed by your config
+        # We check the most common case (OpenRouter), and warn if absent
+        if not os.environ.get("OPENROUTER_API_KEY") and not os.environ.get("OPENAI_API_KEY"):
+            missing_keys.append("OPENROUTER_API_KEY 或 OPENAI_API_KEY")
+        if 'exa' in selected_workflow.lower() and not os.environ.get("EXA_API_KEY"):
+            missing_keys.append("EXA_API_KEY")
+        if missing_keys:
+            st.error("缺少必要的 API Key: " + ", ".join(missing_keys))
+            st.stop()
+
         # Save input text to a temporary file
         with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.txt', encoding='utf-8') as temp_file:
             temp_file.write(input_text)
@@ -161,7 +173,9 @@ if st.button('Process'):
 
         # Run the command
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True, check=True)
+            # Pass through current environment to ensure keys are visible to child
+            env = os.environ.copy()
+            result = subprocess.run(cmd, capture_output=True, text=True, check=True, env=env)
             
             # Display output and provide download link
             output_file = os.path.join(os.path.dirname(temp_file_path), f'{selected_workflow}-output.md')
