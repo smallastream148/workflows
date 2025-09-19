@@ -155,7 +155,7 @@ if st.button('Process'):
 
         # Prepare command with full path to app.py
         app_path = os.path.join(current_dir, 'app.py')
-        cmd = ['poetry', '--directory', current_dir, 'run', 'python', app_path, temp_file_path, '--workflow', selected_workflow]
+        cmd = ['python', app_path, temp_file_path, '--workflow', selected_workflow]
 
         # Run the command
         try:
