@@ -14,4 +14,4 @@ exa-py
 
 # Utilities
 tqdm
-pyyaml
+PyYAML
