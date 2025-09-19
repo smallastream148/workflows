@@ -1,7 +1,12 @@
-# Minimal requirements for Streamlit Cloud
-streamlit
-litellm
-openai
+streamlit>=1.38.0
+pyperclip>=1.9.0
+litellm>=1.51.0
+langchain>=0.2.7
+python-dotenv>=1.0.1
+openai>=1.35.14
+generalagent>=0.3.23
+exa-py>=1.0.16
+schema>=0.7.7
 tiktoken
 tqdm
-exa-py
+PyYAML

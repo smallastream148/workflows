@@ -1,60 +1,17 @@
 import argparse
 from pathlib import Path
 import sys
-
-# 安全导入 pyperclip，在 Streamlit Cloud 等环境中可能不可用
-try:
-    import pyperclip
-    PYPERCLIP_AVAILABLE = True
-except ImportError:
-    PYPERCLIP_AVAILABLE = False
-    print("Warning: pyperclip not available. Clipboard functionality will be disabled.")
-
+import pyperclip
+from dotenv import load_dotenv
 import os
-
-# 安全导入 yaml，在某些环境中可能不可用
-try:
-    import yaml
-    YAML_AVAILABLE = True
-except ImportError:
-    YAML_AVAILABLE = False
-    print("Warning: yaml not available. Using JSON as fallback for configuration files.")
-
+import yaml
 import json
 from typing import List, Dict, Any, Union, Callable
 import re
 import time
 from tqdm import tqdm
 import tiktoken
-
-# 简单的文本分割器，替代 langchain
-class SimpleTextSplitter:
-    def __init__(self, chunk_size=1000, chunk_overlap=20, separators=None):
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        self.separators = separators or ["\n\n", "\n", ". ", "!", "?", ";", ",", ".", " ", ""]
-    
-    def split_text(self, text):
-        """简单的文本分割实现"""
-        chunks = []
-        current_chunk = ""
-        
-        # 按段落分割
-        paragraphs = text.split('\n\n')
-        
-        for paragraph in paragraphs:
-            if len(current_chunk) + len(paragraph) <= self.chunk_size:
-                current_chunk += paragraph + '\n\n'
-            else:
-                if current_chunk.strip():
-                    chunks.append(current_chunk.strip())
-                current_chunk = paragraph + '\n\n'
-        
-        if current_chunk.strip():
-            chunks.append(current_chunk.strip())
-        
-        return chunks
-
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 import logging
@@ -142,16 +99,7 @@ class ConfigManager:
         
         try:
             with open_file_utf8(config_path, 'r') as f:
-                if YAML_AVAILABLE:
-                    config = yaml.safe_load(f)
-                else:
-                    # 尝试将 YAML 作为 JSON 处理（仅适用于简单的 YAML 文件）
-                    content = f.read()
-                    # 简单的 YAML 到 JSON 转换，仅适用于基本格式
-                    try:
-                        config = json.loads(content)
-                    except:
-                        raise ImportError("YAML parsing is not available and file is not valid JSON")
+                config = yaml.safe_load(f)
             ConfigValidator.validate_config(config)
             return config
         except Exception as e:
@@ -162,6 +110,7 @@ class ConfigManager:
 class APIClient:
     """Client for API interactions"""
     def __init__(self, model: str):
+        load_dotenv(override=True)
         self.model = model
         self.api_base = None
         self.api_key = None
@@ -232,9 +181,10 @@ class BaseTextProcessor:
         logger.info(f"Max chars per chunk: {max_chars}")
         
         separators = ["\n\n", "\n", ". ", "!", "?", ";", ",", ".", " ", ""]
-        text_splitter = SimpleTextSplitter(
-            chunk_size=max_chars,
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=self.max_tokens_per_chunk,
             chunk_overlap=20,
+            length_function=lambda t: len(self.encoding.encode(t)),
             separators=separators
         )
         
@@ -640,6 +590,7 @@ def save_output(results: List[str], output_path: str, output_format: str):
 # Main Application
 def main():
     """Main application entry point"""
+    load_dotenv(override=True)
     
     parser = argparse.ArgumentParser(description="Process text with configurable workflows.")
     parser.add_argument("input_file", type=str, help="Path to input text file")
@@ -684,17 +635,12 @@ def main():
             if args.debug:
                 logger.info(f"Results saved to {output_path}")
 
-            # Copy to clipboard (only if pyperclip is available)
+            # Copy to clipboard
             with open_file_utf8(output_path, "r") as f:
                 content = f.read()
-            
-            if PYPERCLIP_AVAILABLE:
-                pyperclip.copy(content)
-                if args.debug:
-                    logger.info("Content copied to clipboard")
-            else:
-                if args.debug:
-                    logger.info("Clipboard functionality not available in this environment")
+            pyperclip.copy(content)
+            if args.debug:
+                logger.info("Content copied to clipboard")
 
     except FileNotFoundError as e:
         logger.error(f"File not found: {e}")
