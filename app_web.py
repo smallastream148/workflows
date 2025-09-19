@@ -2,11 +2,7 @@ import streamlit as st
 import subprocess
 import tempfile
 import os
-from dotenv import load_dotenv
 import yaml
-
-# Load environment variables
-load_dotenv()
 
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))

@@ -10,7 +10,6 @@ except ImportError:
     PYPERCLIP_AVAILABLE = False
     print("Warning: pyperclip not available. Clipboard functionality will be disabled.")
 
-from dotenv import load_dotenv
 import os
 import yaml
 import json
@@ -118,7 +117,6 @@ class ConfigManager:
 class APIClient:
     """Client for API interactions"""
     def __init__(self, model: str):
-        load_dotenv(override=True)
         self.model = model
         self.api_base = None
         self.api_key = None
@@ -598,7 +596,6 @@ def save_output(results: List[str], output_path: str, output_format: str):
 # Main Application
 def main():
     """Main application entry point"""
-    load_dotenv(override=True)
     
     parser = argparse.ArgumentParser(description="Process text with configurable workflows.")
     parser.add_argument("input_file", type=str, help="Path to input text file")
