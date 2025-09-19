@@ -1,0 +1,38 @@
+# Environment variables
+.env
+
+# Logs and temporary files
+logs/
+archive/
+*.log
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Project specific
+replace_model_in_yaml.py
+zip_config_patterns.py
+addons.zip
+poetry.lock
+
+# Streamlit
+.streamlit/secrets.toml
