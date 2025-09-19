@@ -1,7 +1,15 @@
 import argparse
 from pathlib import Path
 import sys
-import pyperclip
+
+# 安全导入 pyperclip，在 Streamlit Cloud 等环境中可能不可用
+try:
+    import pyperclip
+    PYPERCLIP_AVAILABLE = True
+except ImportError:
+    PYPERCLIP_AVAILABLE = False
+    print("Warning: pyperclip not available. Clipboard functionality will be disabled.")
+
 from dotenv import load_dotenv
 import os
 import yaml
@@ -635,12 +643,17 @@ def main():
             if args.debug:
                 logger.info(f"Results saved to {output_path}")
 
-            # Copy to clipboard
+            # Copy to clipboard (only if pyperclip is available)
             with open_file_utf8(output_path, "r") as f:
                 content = f.read()
-            pyperclip.copy(content)
-            if args.debug:
-                logger.info("Content copied to clipboard")
+            
+            if PYPERCLIP_AVAILABLE:
+                pyperclip.copy(content)
+                if args.debug:
+                    logger.info("Content copied to clipboard")
+            else:
+                if args.debug:
+                    logger.info("Clipboard functionality not available in this environment")
 
     except FileNotFoundError as e:
         logger.error(f"File not found: {e}")
