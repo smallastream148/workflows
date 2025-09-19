@@ -1,10 +1,19 @@
-streamlit>=1.38.0
-litellm>=1.51.0
-langchain>=0.2.7
-python-dotenv>=1.0.1
-openai>=1.35.14
-exa-py>=1.0.16
-tiktoken>=0.5.0
-tqdm>=4.60.0
-pyyaml>=6.0
-langchain-text-splitters>=0.2.0
+# Core dependencies
+streamlit==1.38.0
+python-dotenv==1.0.1
+pyyaml==6.0.1
+
+# LLM and API dependencies  
+litellm==1.51.0
+openai==1.35.14
+
+# Text processing
+langchain==0.2.7
+langchain-text-splitters==0.2.0
+tiktoken==0.7.0
+
+# Search functionality
+exa-py==1.0.16
+
+# Utilities
+tqdm==4.66.4
