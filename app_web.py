@@ -2,7 +2,15 @@ import streamlit as st
 import subprocess
 import tempfile
 import os
-import yaml
+import json
+
+# 安全导入 yaml
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    st.error("YAML support not available. Configuration loading may fail.")
 
 # Get the directory of the current script
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -45,7 +53,16 @@ def load_workflows():
 def load_config(workflow):
     config_path = os.path.join(current_dir, 'config', f'{workflow}.yaml')
     with open(config_path, 'r', encoding='utf-8') as f:
-        return yaml.safe_load(f)
+        if YAML_AVAILABLE:
+            return yaml.safe_load(f)
+        else:
+            # 尝试将 YAML 作为 JSON 处理
+            content = f.read()
+            try:
+                return json.loads(content)
+            except:
+                st.error(f"Cannot load configuration file {workflow}.yaml - YAML support not available and file is not valid JSON")
+                return {}
 
 # Streamlit app
 st.title('Text Processing Workflow')

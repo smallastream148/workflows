@@ -1,0 +1,8 @@
+# Minimal requirements for Streamlit Cloud compatibility
+streamlit
+litellm
+openai
+tiktoken
+tqdm
+PyYAML
+exa-py

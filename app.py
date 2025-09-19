@@ -11,18 +11,50 @@ except ImportError:
     print("Warning: pyperclip not available. Clipboard functionality will be disabled.")
 
 import os
-import yaml
+
+# 安全导入 yaml，在某些环境中可能不可用
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
+    print("Warning: yaml not available. Using JSON as fallback for configuration files.")
+
 import json
 from typing import List, Dict, Any, Union, Callable
 import re
 import time
 from tqdm import tqdm
 import tiktoken
-try:
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
-except ImportError:
-    # Fallback for older langchain versions
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
+
+# 简单的文本分割器，替代 langchain
+class SimpleTextSplitter:
+    def __init__(self, chunk_size=1000, chunk_overlap=20, separators=None):
+        self.chunk_size = chunk_size
+        self.chunk_overlap = chunk_overlap
+        self.separators = separators or ["\n\n", "\n", ". ", "!", "?", ";", ",", ".", " ", ""]
+    
+    def split_text(self, text):
+        """简单的文本分割实现"""
+        chunks = []
+        current_chunk = ""
+        
+        # 按段落分割
+        paragraphs = text.split('\n\n')
+        
+        for paragraph in paragraphs:
+            if len(current_chunk) + len(paragraph) <= self.chunk_size:
+                current_chunk += paragraph + '\n\n'
+            else:
+                if current_chunk.strip():
+                    chunks.append(current_chunk.strip())
+                current_chunk = paragraph + '\n\n'
+        
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+        
+        return chunks
+
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 import logging
@@ -110,7 +142,16 @@ class ConfigManager:
         
         try:
             with open_file_utf8(config_path, 'r') as f:
-                config = yaml.safe_load(f)
+                if YAML_AVAILABLE:
+                    config = yaml.safe_load(f)
+                else:
+                    # 尝试将 YAML 作为 JSON 处理（仅适用于简单的 YAML 文件）
+                    content = f.read()
+                    # 简单的 YAML 到 JSON 转换，仅适用于基本格式
+                    try:
+                        config = json.loads(content)
+                    except:
+                        raise ImportError("YAML parsing is not available and file is not valid JSON")
             ConfigValidator.validate_config(config)
             return config
         except Exception as e:
@@ -191,10 +232,9 @@ class BaseTextProcessor:
         logger.info(f"Max chars per chunk: {max_chars}")
         
         separators = ["\n\n", "\n", ". ", "!", "?", ";", ",", ".", " ", ""]
-        text_splitter = RecursiveCharacterTextSplitter(
-            chunk_size=self.max_tokens_per_chunk,
+        text_splitter = SimpleTextSplitter(
+            chunk_size=max_chars,
             chunk_overlap=20,
-            length_function=lambda t: len(self.encoding.encode(t)),
             separators=separators
         )
         

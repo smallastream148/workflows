@@ -1,17 +1,7 @@
-# Core dependencies
+# Minimal requirements for Streamlit Cloud
 streamlit
-
-# LLM and API dependencies  
 litellm
 openai
-
-# Text processing
-langchain
 tiktoken
-
-# Search functionality
-exa-py
-
-# Utilities
 tqdm
-PyYAML
+exa-py
