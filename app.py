@@ -18,7 +18,11 @@ import re
 import time
 from tqdm import tqdm
 import tiktoken
-from langchain_text_splitters import RecursiveCharacterTextSplitter
+try:
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+except ImportError:
+    # Fallback for older langchain versions
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
 from datetime import datetime, timedelta
 from contextlib import contextmanager
 import logging
