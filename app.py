@@ -1,7 +1,15 @@
 import argparse
 from pathlib import Path
 import sys
-import pyperclip
+
+# 安全导入 pyperclip，在 Streamlit Cloud 等环境中可能不可用
+try:
+    import pyperclip
+    PYPERCLIP_AVAILABLE = True
+except ImportError:
+    PYPERCLIP_AVAILABLE = False
+    print("Warning: pyperclip not available. Clipboard functionality will be disabled.")
+
 from dotenv import load_dotenv
 import os
 import yaml
@@ -143,7 +151,11 @@ class BaseTextProcessor:
     """Base class for text processing functionality"""
     def __init__(self, config: Dict[str, Any], default_max_tokens: int = 1000):
         self.max_tokens_per_chunk = config.get('parameters', {}).get('tokens', default_max_tokens)
-        self.encoding = tiktoken.encoding_for_model("gpt-4-turbo")
+        # Robust tiktoken encoding fallback to avoid runtime errors on unknown models
+        try:
+            self.encoding = tiktoken.encoding_for_model("gpt-4-turbo")
+        except Exception:
+            self.encoding = tiktoken.get_encoding("cl100k_base")
         self.config = config
         self.chunk_count = 0
         self.current_chunk_number = 0
@@ -173,7 +185,10 @@ class BaseTextProcessor:
     def split_text(self, text: str) -> List[str]:
         """Split text into processable chunks"""
         preprocessed_text = self.preprocess_text(text)
-        chars_per_token = len(preprocessed_text) / len(self.encoding.encode(preprocessed_text))
+        tokenized = self.encoding.encode(preprocessed_text)
+        if len(tokenized) == 0:
+            return []
+        chars_per_token = len(preprocessed_text) / len(tokenized)
         max_chars = int(self.max_tokens_per_chunk * chars_per_token)
         
         logger.info(f"Preprocessed text length: {len(preprocessed_text)}")
@@ -191,8 +206,12 @@ class BaseTextProcessor:
         chunks = text_splitter.split_text(preprocessed_text)
         logger.info(f"Number of chunks after initial split: {len(chunks)}")
         
-        return [self._split_chunk(chunk) if len(self.encoding.encode(chunk)) > 
-                self.max_tokens_per_chunk else chunk for chunk in chunks]
+        return [
+            self._split_chunk(chunk)
+            if len(self.encoding.encode(chunk)) > self.max_tokens_per_chunk
+            else chunk
+            for chunk in chunks
+        ]
 
     def _split_chunk(self, chunk: str) -> str:
         """Split a chunk if it exceeds token limit"""
@@ -635,12 +654,17 @@ def main():
             if args.debug:
                 logger.info(f"Results saved to {output_path}")
 
-            # Copy to clipboard
+            # Copy to clipboard (only if available)
             with open_file_utf8(output_path, "r") as f:
                 content = f.read()
-            pyperclip.copy(content)
-            if args.debug:
-                logger.info("Content copied to clipboard")
+            
+            if PYPERCLIP_AVAILABLE:
+                pyperclip.copy(content)
+                if args.debug:
+                    logger.info("Content copied to clipboard")
+            else:
+                if args.debug:
+                    logger.info("Clipboard functionality not available in this environment")
 
     except FileNotFoundError as e:
         logger.error(f"File not found: {e}")

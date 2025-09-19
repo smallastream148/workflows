@@ -1,5 +1,6 @@
 import streamlit as st
 import subprocess
+import sys
 import tempfile
 import os
 from dotenv import load_dotenv
@@ -155,7 +156,8 @@ if st.button('Process'):
 
         # Prepare command with full path to app.py
         app_path = os.path.join(current_dir, 'app.py')
-        cmd = ['python', app_path, temp_file_path, '--workflow', selected_workflow]
+        # Use the same Python interpreter to avoid PATH issues on cloud
+        cmd = [sys.executable, app_path, temp_file_path, '--workflow', selected_workflow]
 
         # Run the command
         try:
@@ -175,7 +177,7 @@ if st.button('Process'):
                     st.text_area('Standard Error', result.stderr, height=300)
 
         except subprocess.CalledProcessError as e:
-            st.error(f'Error occurred. Displaying standard output and error for debugging:')
+            st.error('Error occurred. Displaying standard output and error for debugging:')
             st.text_area('Standard Output', e.stdout, height=300)
             st.text_area('Standard Error', e.stderr, height=300)
 
